@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
 
+from app.observability import log_redaction
 from app.redactor import Detection, redact_text
 
 load_dotenv()
+load_dotenv(".env.local", override=False)
 
 app = FastAPI(title="Vaultflow PII Redaction Gateway", version="0.1.0")
 
@@ -42,6 +44,11 @@ def health() -> dict[str, str]:
 @app.post("/redact", response_model=RedactResponse)
 async def redact(request: RedactRequest) -> RedactResponse:
     result = await redact_text(request.text)
+    try:
+        await log_redaction(request.text, result)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="redaction log write failed") from exc
+
     return RedactResponse(
         redacted_text=result.redacted_text,
         detections=[_detection_response(detection) for detection in result.detections],

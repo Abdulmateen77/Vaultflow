@@ -10,7 +10,8 @@ The app exposes one core feature: detect and redact sensitive data from text bef
 - `/redact` endpoint
 - Regex PII detection for email, phone, SSN, and credit cards
 - Claude API detector for names and physical addresses
-- Convex logging and Cloudflare public URL are next in the build order
+- Convex logging for every successful redaction request
+- Cloudflare public URL is next in the build order
 
 ## Run locally
 
@@ -25,6 +26,26 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ```bash
 uv run pytest -q
+```
+
+## Convex observability
+
+Convex stores every successful redaction request and result in `redactionLogs`.
+
+```bash
+npm install
+npx convex dev
+```
+
+Convex writes `CONVEX_URL` to `.env.local`; the FastAPI app loads `.env.local` as a fallback.
+
+Query the latest logs:
+
+```bash
+CONVEX_URL=$(grep '^CONVEX_URL=' .env.local | cut -d= -f2-)
+curl -s "$CONVEX_URL/api/query" \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"redactions:list","args":{"limit":10},"format":"json"}'
 ```
 
 ## API
