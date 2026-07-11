@@ -1,62 +1,110 @@
 # Vaultflow — Deployment & Run Guide
 
-## Local runtime
+## Prerequisites
 
-Start Convex logging backend:
+- Python 3.11+ with `uv` installed
+- Node.js 18+ (for Convex local backend)
+- `cloudflared` binary (Windows AMD64) — see step 3
+
+---
+
+## 1. Start Convex local backend
 
 ```bash
+# In the repo root — starts Convex on http://127.0.0.1:3210
 npx convex dev
 ```
 
-Start FastAPI + frontend:
+CONVEX_URL is already set in `.env.local`:
+
+```
+CONVEX_URL=http://127.0.0.1:3210
+```
+
+Convex logs every /redact call to its `redactionLogs` table via `redactions:log` (inputText, redactedText, detections, createdAt).
+
+---
+
+## 2. Start FastAPI
 
 ```bash
+# From repo root
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Verify locally
+curl http://127.0.0.1:8000/health
+# => {"status":"ok"}
 ```
 
-Run tests:
+---
 
-```bash
-uv run pytest -q
-```
+## 3. Expose a public URL via Cloudflare Tunnel (trycloudflare.com)
 
-## Public URL via Cloudflare Tunnel
+No Cloudflare account required — trycloudflare.com issues anonymous quick tunnels.
 
-This MVP uses a Cloudflare quick tunnel so the FastAPI app remains the backend while Cloudflare provides the public URL.
+Use the npm-distributed Cloudflare Tunnel binary (used for this verification):
 
 ```bash
 npx cloudflared tunnel --url http://127.0.0.1:8000
 ```
 
-Cloudflare prints a `https://*.trycloudflare.com` URL. Keep the `cloudflared` process running while demoing.
-
-## Live verification commands
+Alternative Windows AMD64 download:
 
 ```bash
-PUBLIC_URL="https://constraint-exactly-basic-portrait.trycloudflare.com"
-
-curl "$PUBLIC_URL/health"
-
-curl -X POST "$PUBLIC_URL/redact" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"Jane Doe lives at 221B Baker Street. Email jane@example.com and call (415) 555-2671. SSN 123-45-6789. Card 4111 1111 1111 1111."}'
-
-# Frontend UI
-# Open in a browser or phone:
-# https://constraint-exactly-basic-portrait.trycloudflare.com/
+curl -L -o cloudflared.exe \
+  "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+./cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate
 ```
 
-## Buildathon verification evidence
+cloudflared prints the public URL in its startup log, e.g.:
 
-Session date: 2026-07-11
+```
+INF | Your quick Tunnel has been created! Visit it at:
+INF | https://<random-slug>.trycloudflare.com
+```
+
+---
+
+## 4. Verify live endpoints from public URL
+
+```bash
+PUBLIC_URL="https://<your-slug>.trycloudflare.com"
+
+# Health check
+curl "$PUBLIC_URL/health"
+# => {"status":"ok"}
+
+# PII redaction — 10 planted items across 2 identities
+curl -X POST "$PUBLIC_URL/redact" \
+  -H "Content-Type: application/json" \
+  -d '{"text":"SSN 123-45-6789, email john@gmail.com, phone (555) 867-5309, card 4111 1111 1111 1111, SSN 987-65-4321, email jane@company.org, phone 800-555-1234, card 5500-0000-0000-0004, user John Smith at 123 Main St."}'
+
+# Frontend UI
+open "$PUBLIC_URL/"
+```
+
+---
+
+## 5. Convex log verification
+
+```bash
+# List stored redaction events (Convex local backend must be running)
+curl -s http://127.0.0.1:3210/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"path":"redactions:list","args":{},"format":"json"}' | python -m json.tool
+```
+
+---
+
+## Verified session evidence (2026-07-11)
 
 Public Cloudflare URL:
 
 ```text
-https://constraint-exactly-basic-portrait.trycloudflare.com
+https://king-til-aqua-editorials.trycloudflare.com
 ```
 
-Verified endpoints:
+Verified responses:
 
 ```text
 GET /health -> {"status":"ok"}
@@ -68,14 +116,12 @@ Sample public `/redact` response:
 
 ```json
 {
-  "redacted_text": "[NAME] lives at [ADDRESS]. Email [EMAIL] and call [PHONE]. SSN [SSN]. Card [CREDIT_CARD].",
+  "redacted_text": "[NAME] lives at [ADDRESS]. Email [EMAIL]. SSN [SSN].",
   "detections": [
     {"type": "NAME", "source": "llm"},
     {"type": "ADDRESS", "source": "llm"},
     {"type": "EMAIL", "source": "regex"},
-    {"type": "PHONE", "source": "regex"},
-    {"type": "SSN", "source": "regex"},
-    {"type": "CREDIT_CARD", "source": "regex"}
+    {"type": "SSN", "source": "regex"}
   ]
 }
 ```
@@ -97,22 +143,6 @@ PASS multi
 SUMMARY: 10/10 passed
 ```
 
-## Observability proof
+Frontend: HTML served at `/` (paste-and-redact UI).
 
-Every successful `/redact` call writes a Convex log through `redactions:log`.
-
-Query latest logs:
-
-```bash
-CONVEX_URL=$(grep '^CONVEX_URL=' .env.local | cut -d= -f2-)
-curl -s "$CONVEX_URL/api/query" \
-  -H 'Content-Type: application/json' \
-  -d '{"path":"redactions:list","args":{"limit":10},"format":"json"}'
-```
-
-Each log stores:
-
-- `inputText`
-- `redactedText`
-- `detections`
-- `createdAt`
+Convex backend: redaction events are logged through `redactions:log` and queryable with `redactions:list`.
