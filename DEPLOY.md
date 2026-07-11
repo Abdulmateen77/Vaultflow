@@ -19,6 +19,9 @@ curl https://king-til-aqua-editorials.trycloudflare.com/health
 curl https://king-til-aqua-editorials.trycloudflare.com/team
 # Serves the Autonomous Agents Team page with CEO, CTO, Sales, Marketing, Finance cards.
 
+curl -I https://king-til-aqua-editorials.trycloudflare.com/paperclip-ui
+# Redirects to the Paperclip Dashboard / workforce log backend.
+
 curl -X POST https://king-til-aqua-editorials.trycloudflare.com/redact \
   -H 'Content-Type: application/json' \
   -d '{"text":"Cloud check: Jane Doe, jane@example.com, 1234567890."}'

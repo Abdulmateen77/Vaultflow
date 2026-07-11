@@ -3,21 +3,22 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_frontend_no_longer_links_to_paperclip_ui():
+def test_frontend_workforce_nav_links_to_paperclip_dashboard():
     client = TestClient(app)
 
     for route in ["/", "/team"]:
         response = client.get(route)
         assert response.status_code == 200
-        assert "/paperclip-ui" not in response.text
-        assert "Paperclip" not in response.text
-        assert "paperclip" not in response.text
-        assert "Paperclip Dashboard" not in response.text
+        assert "Workforce Log" in response.text
+        assert "Paperclip Dashboard" in response.text
+        assert 'href="/paperclip-ui"' in response.text
 
 
-def test_old_paperclip_ui_redirect_is_not_exposed():
+def test_paperclip_ui_redirect_is_exposed(monkeypatch):
+    monkeypatch.setenv("PAPERCLIP_PUBLIC_URL", "https://paperclip.example.com")
     client = TestClient(app)
 
     response = client.get("/paperclip-ui", follow_redirects=False)
 
-    assert response.status_code == 404
+    assert response.status_code in {302, 307}
+    assert response.headers["location"] == "https://paperclip.example.com"

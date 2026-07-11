@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
 import pathlib
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
@@ -64,6 +65,12 @@ def health() -> dict[str, str]:
 @app.get("/team", include_in_schema=False)
 def team() -> FileResponse:
     return FileResponse(_STATIC_DIR / "team.html")
+
+
+@app.get("/paperclip-ui", include_in_schema=False)
+def paperclip_ui() -> RedirectResponse:
+    target = os.getenv("PAPERCLIP_PUBLIC_URL", "http://127.0.0.1:3100").rstrip("/")
+    return RedirectResponse(target)
 
 
 @app.post("/agent/{role}", response_model=AgentResponse)
