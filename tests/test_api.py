@@ -77,3 +77,22 @@ def test_redact_endpoint_rejects_empty_text():
     response = client.post("/redact", json={"text": "   "})
 
     assert response.status_code == 422
+
+
+def test_root_serves_html():
+    client = TestClient(app)
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+    assert b"Vaultflow" in response.content
+
+
+def test_health_endpoint():
+    client = TestClient(app)
+
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import pathlib
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
 
@@ -11,6 +15,9 @@ load_dotenv()
 load_dotenv(".env.local", override=False)
 
 app = FastAPI(title="Vaultflow PII Redaction Gateway", version="0.1.0")
+
+_STATIC_DIR = pathlib.Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
 
 
 class RedactRequest(BaseModel):
@@ -34,6 +41,11 @@ class DetectionResponse(BaseModel):
 class RedactResponse(BaseModel):
     redacted_text: str
     detections: list[DetectionResponse]
+
+
+@app.get("/", include_in_schema=False)
+def root() -> FileResponse:
+    return FileResponse(_STATIC_DIR / "index.html")
 
 
 @app.get("/health")
