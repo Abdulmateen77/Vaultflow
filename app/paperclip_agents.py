@@ -53,8 +53,9 @@ TASK_PROMPTS: dict[str, AgentRoleConfig] = {
         paperclip_agent_name="Sales",
         prompt=(
             "Use Linkup to find real companies + decision makers in regulated "
-            "industries (healthcare/legal/finance) who need PII redaction. Return "
-            "company, contact name/title, why they fit."
+            "industries (healthcare/legal/finance) who need PII redaction. Final "
+            "answer must start with 'PROSPECT RESULTS' and be a numbered prospect list. "
+            "For each prospect include: company, contact name/title, why they fit, pain, next step."
         ),
     ),
     "marketing": AgentRoleConfig(
@@ -188,13 +189,13 @@ class PaperclipAgentClient:
         last_status = "unknown"
         while time.monotonic() < deadline:
             comment = await self._latest_agent_comment(client, issue_id, agent_id)
-            if comment:
-                return comment
 
             issue_response = await client.get(f"{self.api_base}/issues/{issue_id}")
             issue_response.raise_for_status()
             issue = issue_response.json()
             last_status = issue.get("status", last_status)
+            if last_status == "done" and comment:
+                return comment
             if last_status in {"blocked", "cancelled"}:
                 raise RuntimeError(f"Paperclip ticket {issue_id} ended with status {last_status}")
             await asyncio.sleep(self.poll_interval_seconds)
@@ -210,14 +211,19 @@ class PaperclipAgentClient:
         response = await client.get(f"{self.api_base}/issues/{issue_id}/comments")
         response.raise_for_status()
         comments = response.json()
-        for comment in comments:
+        agent_comments = [
+            comment
+            for comment in comments
             if (
                 comment.get("authorType") == "agent"
                 and comment.get("authorAgentId") == agent_id
                 and comment.get("body")
-            ):
-                return str(comment["body"])
-        return None
+            )
+        ]
+        if not agent_comments:
+            return None
+        latest = max(agent_comments, key=lambda comment: str(comment.get("createdAt", "")))
+        return str(latest["body"])
 
 
 class _ExistingClientContext:

@@ -74,6 +74,69 @@ async def test_paperclip_client_creates_invokes_polls_and_returns_agent_comment(
 
 
 @pytest.mark.asyncio
+async def test_paperclip_client_waits_for_done_before_returning_final_agent_comment():
+    issue = {
+        "id": "ticket-sales",
+        "identifier": "VAU-999",
+        "status": "todo",
+        "assigneeAgentId": "sales-agent",
+        "title": "Team page: Sales",
+    }
+    state = {"comments_calls": 0, "issue_calls": 0}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET" and str(request.url).endswith("/companies/company-1/agents"):
+            return httpx.Response(200, json=[{"id": "sales-agent", "name": "Sales", "status": "idle"}])
+        if request.method == "POST" and str(request.url).endswith("/companies/company-1/issues"):
+            payload = json.loads(request.content)
+            assert "PROSPECT RESULTS" in payload["description"]
+            assert "numbered prospect list" in payload["description"]
+            assert "company, contact name/title, why they fit, pain, next step" in payload["description"]
+            return httpx.Response(201, json=issue)
+        if request.method == "POST" and str(request.url).endswith("/agents/sales-agent/heartbeat/invoke"):
+            return httpx.Response(201, json={"id": "run-sales", "status": "queued"})
+        if request.method == "GET" and str(request.url).endswith("/issues/ticket-sales/comments"):
+            state["comments_calls"] += 1
+            comments = [
+                {
+                    "authorType": "agent",
+                    "authorAgentId": "sales-agent",
+                    "body": "Starting prospect research with Linkup.",
+                    "createdAt": "2026-07-11T14:43:34.000Z",
+                }
+            ]
+            if state["comments_calls"] >= 2:
+                comments.append(
+                    {
+                        "authorType": "agent",
+                        "authorAgentId": "sales-agent",
+                        "body": "PROSPECT RESULTS\n1. Clio — CTO David Watson — legal AI needs privilege-safe PII redaction.",
+                        "createdAt": "2026-07-11T14:44:34.000Z",
+                    }
+                )
+            return httpx.Response(200, json=comments)
+        if request.method == "GET" and str(request.url).endswith("/issues/ticket-sales"):
+            state["issue_calls"] += 1
+            status = "done" if state["issue_calls"] >= 2 else "in_progress"
+            return httpx.Response(200, json={**issue, "status": status})
+        return httpx.Response(404, json={"error": str(request.url)})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    paperclip = PaperclipAgentClient(
+        api_base="http://paperclip.local/api",
+        company_id="company-1",
+        client=client,
+        poll_interval_seconds=0,
+        timeout_seconds=1,
+    )
+
+    result = await paperclip.run_role("sales")
+
+    assert "PROSPECT RESULTS" in result.output
+    assert "Starting prospect research" not in result.output
+
+
+@pytest.mark.asyncio
 async def test_run_agent_role_logs_output_to_convex(monkeypatch):
     captured = {}
 
