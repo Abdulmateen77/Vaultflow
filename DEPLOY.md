@@ -1,135 +1,238 @@
 # Vaultflow — Deployment & Run Guide
 
-## Prerequisites
+## Current live deployment evidence
 
-- Python 3.11+ with `uv` installed
-- Node.js 18+ (for Convex local backend)
-- `cloudflared` binary (Windows AMD64) — see step 3
+Date: 2026-07-11
 
----
+### Public FastAPI + frontend URL
 
-## 1. Start Convex local backend
+```text
+https://king-til-aqua-editorials.trycloudflare.com
+```
+
+Live routes verified:
 
 ```bash
-# In the repo root — starts Convex on http://127.0.0.1:3210
+curl https://king-til-aqua-editorials.trycloudflare.com/health
+# {"status":"ok"}
+
+curl https://king-til-aqua-editorials.trycloudflare.com/team
+# Serves the Paperclip Team page with CEO, CTO, Sales, Marketing, Finance cards.
+
+curl -X POST https://king-til-aqua-editorials.trycloudflare.com/redact \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Cloud check: Jane Doe, jane@example.com, 1234567890."}'
+# {"redacted_text":"Cloud check: [NAME], [EMAIL], [PHONE].", ...}
+```
+
+### Public Paperclip UI URL
+
+```text
+https://presidential-rna-habits-tiles.trycloudflare.com
+```
+
+The frontend links to this through:
+
+```text
+/paperclip-ui
+```
+
+Verified redirect:
+
+```bash
+curl -I https://king-til-aqua-editorials.trycloudflare.com/paperclip-ui
+# Location: https://presidential-rna-habits-tiles.trycloudflare.com
+```
+
+Verified Paperclip public health:
+
+```bash
+curl https://presidential-rna-habits-tiles.trycloudflare.com/api/health
+# {"status":"ok", ...}
+```
+
+Paperclip hostname allowlist was updated with:
+
+```bash
+npx paperclipai allowed-hostname presidential-rna-habits-tiles.trycloudflare.com
+```
+
+Paperclip was restarted afterward so the hostname allowlist took effect.
+
+### Convex Cloud deployment
+
+Project:
+
+```text
+axleron-ai / vaultflow-3518a
+```
+
+Production deployment:
+
+```text
+prod:abundant-ferret-758
+```
+
+Convex Cloud URL:
+
+```text
+https://abundant-ferret-758.convex.cloud
+```
+
+Dashboard:
+
+```text
+https://dashboard.convex.dev/t/axleron-ai/vaultflow-3518a/abundant-ferret-758
+```
+
+Convex tables/functions deployed:
+
+- `redactionLogs`
+  - mutation: `redactions:log`
+  - query: `redactions:list`
+- `agentLogs`
+  - mutation: `agentLogs:log`
+  - query: `agentLogs:list`
+
+Verified cloud redaction log query:
+
+```bash
+curl https://abundant-ferret-758.convex.cloud/api/query \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"redactions:list","args":{"limit":2},"format":"json"}'
+```
+
+Latest verified cloud redaction row included:
+
+```text
+inputText:    Cloud check: Jane Doe, jane@example.com, 1234567890.
+redactedText: Cloud check: [NAME], [EMAIL], [PHONE].
+detections:   NAME(llm), EMAIL(regex), PHONE(regex)
+```
+
+Verified cloud Paperclip agent log query:
+
+```bash
+curl https://abundant-ferret-758.convex.cloud/api/query \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"agentLogs:list","args":{"limit":3},"format":"json"}'
+```
+
+Latest verified cloud agent row included:
+
+```text
+role:     cto
+ticketId: 5bf55c03-6f72-412e-8d50-33db47929ca3
+output:   CTO tech status report from a real Paperclip ticket
+```
+
+## Runtime configuration
+
+Runtime-only secrets/config live in ignored `.env` files and are not committed.
+
+Important runtime values currently set locally:
+
+```text
+CONVEX_URL=https://abundant-ferret-758.convex.cloud
+CONVEX_DEPLOYMENT=prod:abundant-ferret-758
+PAPERCLIP_PUBLIC_URL=https://presidential-rna-habits-tiles.trycloudflare.com
+```
+
+The app loads `.env` first and `.env.local` second with `override=False`, so cloud `CONVEX_URL` in `.env` takes precedence over local Convex fallback values in `.env.local`.
+
+## Start services locally
+
+### Convex local fallback
+
+Only needed for local development fallback:
+
+```bash
 npx convex dev
 ```
 
-CONVEX_URL is already set in `.env.local`:
-
-```
-CONVEX_URL=http://127.0.0.1:3210
-```
-
-Convex logs every /redact call to its `redactions` table (inputText, redactedText, detections, timestamp).
-
----
-
-## 2. Start FastAPI
+### FastAPI backend + frontend
 
 ```bash
-# From repo root
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-# Verify locally
-curl http://127.0.0.1:8000/health
-# => {"status":"ok"}
 ```
 
----
-
-## 3. Expose a public URL via Cloudflare Tunnel (trycloudflare.com)
-
-No Cloudflare account required — trycloudflare.com issues anonymous quick tunnels.
-
-Download cloudflared (Windows AMD64):
+### Paperclip backend/UI
 
 ```bash
-curl -L -o cloudflared.exe \
-  "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+npx paperclipai run
 ```
 
-Start the tunnel (run from the directory containing cloudflared.exe):
+## Cloudflare quick tunnels
+
+FastAPI/frontend tunnel:
 
 ```bash
-./cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate
+npx cloudflared tunnel --url http://127.0.0.1:8000
 ```
 
-cloudflared prints the public URL in its startup log, e.g.:
-
-```
-INF | Your quick Tunnel has been created! Visit it at:
-INF | https://<random-slug>.trycloudflare.com
-```
-
----
-
-## 4. Verify live endpoints from public URL
+Paperclip UI tunnel:
 
 ```bash
-PUBLIC_URL="https://<your-slug>.trycloudflare.com"
-
-# Health check
-curl "$PUBLIC_URL/health"
-# => {"status":"ok"}
-
-# PII redaction — 10 planted items across 2 identities
-curl -X POST "$PUBLIC_URL/redact" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"SSN 123-45-6789, email john@gmail.com, phone (555) 867-5309, card 4111 1111 1111 1111, SSN 987-65-4321, email jane@company.org, phone 800-555-1234, card 5500-0000-0000-0004, user John Smith at 123 Main St."}'
-
-# Frontend UI
-open "$PUBLIC_URL/"
+npx cloudflared tunnel --url http://127.0.0.1:3100
 ```
 
----
-
-## 5. Convex log verification
+If the Paperclip tunnel slug changes, allowlist the new hostname and update `.env`:
 
 ```bash
-# List stored redaction events (Convex local backend must be running)
-curl -s http://127.0.0.1:3210/api/query \
-  -H "Content-Type: application/json" \
-  -d '{"path":"redactions:list","args":{},"format":"json"}' | python -m json.tool
+npx paperclipai allowed-hostname <new-slug>.trycloudflare.com
+# restart Paperclip
+# update PAPERCLIP_PUBLIC_URL=https://<new-slug>.trycloudflare.com
+# restart FastAPI
 ```
 
----
+## Dedicated-domain blocker
 
-## Verified session evidence (2026-07-11 — session 2)
+Dedicated Cloudflare hostnames are not configured yet because this machine does not have active Cloudflare browser/cert auth:
 
-Public URL: https://pine-colin-dept-cord.trycloudflare.com
-
-All three services confirmed running:
-- Convex backend: port 3210 (local SQLite, 30+ redaction events logged)
-- FastAPI: port 8000 (uvicorn)
-- cloudflared tunnel: PID 4567 — cmd: `cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate`
-
-/health response:
-```json
-{"status":"ok"}
+```text
+wrangler whoami -> not authenticated
+~/.cloudflared/cert.pem -> missing
 ```
 
-/redact response (10 PII items detected and redacted):
-```json
-{
-  "redacted_text": "SSN [SSN], email [EMAIL], phone [PHONE], card [CREDIT_CARD], SSN [SSN], email [EMAIL], phone [PHONE], card [CREDIT_CARD], user [NAME] at [ADDRESS].",
-  "detections": [
-    {"type":"SSN","start":4,"end":15,"source":"regex"},
-    {"type":"EMAIL","start":23,"end":37,"source":"regex"},
-    {"type":"PHONE","start":45,"end":59,"source":"regex"},
-    {"type":"CREDIT_CARD","start":66,"end":85,"source":"regex"},
-    {"type":"SSN","start":91,"end":102,"source":"regex"},
-    {"type":"EMAIL","start":110,"end":126,"source":"regex"},
-    {"type":"PHONE","start":134,"end":146,"source":"regex"},
-    {"type":"CREDIT_CARD","start":153,"end":172,"source":"regex"},
-    {"type":"NAME","start":179,"end":189,"source":"llm"},
-    {"type":"ADDRESS","start":193,"end":204,"source":"llm"}
-  ]
-}
+To move from quick tunnels to stable dedicated domains, authenticate Cloudflare and create named tunnels:
+
+```bash
+npx cloudflared tunnel login
+npx cloudflared tunnel create vaultflow-api
+npx cloudflared tunnel create vaultflow-paperclip
+npx cloudflared tunnel route dns vaultflow-api <api-hostname>
+npx cloudflared tunnel route dns vaultflow-paperclip <paperclip-hostname>
 ```
 
-Detection summary: SSN×2, EMAIL×2, PHONE×2, CREDIT_CARD×2, NAME×1, ADDRESS×1 = 10 total
+Then update:
 
-Frontend: HTML served at / (paste-and-redact UI) — confirmed via HTTP 200 + HTML body.
+```text
+PAPERCLIP_PUBLIC_URL=https://<paperclip-hostname>
+```
 
-Convex backend: 30+ redaction events logged and queryable at http://127.0.0.1:3210/api/query.
+and restart FastAPI.
+
+## Full verification checklist
+
+```bash
+uv run pytest -q
+
+curl https://king-til-aqua-editorials.trycloudflare.com/health
+curl https://king-til-aqua-editorials.trycloudflare.com/team
+curl -I https://king-til-aqua-editorials.trycloudflare.com/paperclip-ui
+curl https://presidential-rna-habits-tiles.trycloudflare.com/api/health
+
+curl -X POST https://king-til-aqua-editorials.trycloudflare.com/redact \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"My name is John Smith. My phone number is 1234567890 and my email is john@example.com."}'
+
+curl -X POST https://king-til-aqua-editorials.trycloudflare.com/agent/cto
+
+curl https://abundant-ferret-758.convex.cloud/api/query \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"redactions:list","args":{"limit":2},"format":"json"}'
+
+curl https://abundant-ferret-758.convex.cloud/api/query \
+  -H 'Content-Type: application/json' \
+  -d '{"path":"agentLogs:list","args":{"limit":3},"format":"json"}'
+```
