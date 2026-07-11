@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vaultflow – Paperclip Team</title>
+  <title>Vaultflow – Autonomous Agents Team</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -130,13 +130,14 @@
 <body>
 <header>
   <nav>
-    <a href="/">Redaction Gateway</a>
+    <a href="/">Home</a>
     <a href="/api-reference">API Docs</a>
     <a href="/team">Team</a>
-    <a href="/paperclip-ui" target="_blank" rel="noopener">Open Paperclip dashboard</a>
+    <a href="/paperclip-ui" target="_blank" rel="noopener">Workforce Log</a>
+    <a href="/paperclip-ui" target="_blank" rel="noopener">Paperclip Dashboard</a>
   </nav>
-  <h1>Paperclip <span>Team</span></h1>
-  <p>Click a role to create a real Paperclip ticket assigned to that agent. The panel displays the agent's ticket response after Paperclip returns it.</p>
+  <h1>Autonomous Agents Team</h1>
+  <p>Autonomous agents team runs the company app through real Paperclip tickets. Click a role; the workforce log shows the agent's actual response.</p>
 </header>
 
 <main>
@@ -171,12 +172,12 @@
   <section class="output-wrap" aria-live="polite">
     <div class="output-head">
       <div>
-        <div class="output-title">Agent ticket response</div>
-        <div id="status">Choose a role to create a Paperclip ticket.</div>
+        <div class="output-title">Workforce log</div>
+        <div id="status">Choose an agent to create a Paperclip ticket.</div>
       </div>
       <span class="pill">Paperclip-backed</span>
     </div>
-    <pre id="agent-output">No ticket has been run yet.</pre>
+    <pre id="agent-output">No workforce run has been started yet.</pre>
     <div class="meta">
       <span>Role: <strong id="meta-role">—</strong></span>
       <span>Ticket: <strong id="meta-ticket">—</strong></span>
@@ -184,7 +185,7 @@
   </section>
 </main>
 
-<footer>Vaultflow Team page — every card creates a real Paperclip ticket; FastAPI never calls an LLM directly for these role outputs.</footer>
+<footer>Autonomous agents team runs the company app — every card creates a real Paperclip ticket and writes a workforce log.</footer>
 
 <script>
   const cards = Array.from(document.querySelectorAll('.agent-card'));
@@ -204,8 +205,8 @@
   async function runRole(role) {
     setBusy(true);
     statusEl.className = 'running';
-    statusEl.textContent = `Creating Paperclip ticket for ${role.toUpperCase()} and waiting for the agent response...`;
-    outputEl.textContent = 'Waiting on Paperclip... This can take a minute because a real agent ticket is running.';
+    statusEl.textContent = `Creating a Paperclip workforce ticket for ${role.toUpperCase()} and waiting for the agent response...`;
+    outputEl.textContent = 'Waiting on Paperclip... This can take a minute because a real autonomous agent run is executing.';
     roleEl.textContent = role;
     ticketEl.textContent = 'pending';
 

@@ -20,4 +20,5 @@ def test_team_page_links_to_paperclip_ui():
 
     assert response.status_code == 200
     assert 'href="/paperclip-ui"' in response.text
-    assert "Open Paperclip dashboard" in response.text
+    assert "Workforce Log" in response.text
+    assert "Paperclip Dashboard" in response.text
