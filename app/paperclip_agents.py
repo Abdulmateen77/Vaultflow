@@ -170,6 +170,7 @@ class PaperclipAgentClient:
             "- Do not call Claude, Linkup, or other model/search tools from FastAPI; use your Paperclip runtime.\n"
             "- If a required tool such as Linkup is unavailable, explain the blocker in the ticket response.\n"
             "- When done, post the final answer as an agent comment on this ticket and mark the ticket done.\n"
+            "- If you post comments through the Paperclip API yourself, POST to /api/issues/{issueId}/comments with JSON {\"body\": \"...\"}; do not use {\"comment\": \"...\"} for that endpoint.\n"
             "- Keep the answer concise and useful for display in the Vaultflow Team page output panel.\n"
         )
 

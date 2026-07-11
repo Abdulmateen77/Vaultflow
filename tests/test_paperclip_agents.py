@@ -34,6 +34,8 @@ async def test_paperclip_client_creates_invokes_polls_and_returns_agent_comment(
             assert payload["status"] == "todo"
             assert "Act as company strategist" in payload["description"]
             assert "post the final answer as an agent comment" in payload["description"]
+            assert 'JSON {"body": "..."}' in payload["description"]
+            assert 'do not use {"comment": "..."}' in payload["description"]
             return httpx.Response(201, json=issue)
         if request.method == "POST" and str(request.url).endswith("/agents/ceo-agent/heartbeat/invoke"):
             return httpx.Response(201, json={"id": "run-1", "status": "queued"})
