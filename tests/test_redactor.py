@@ -90,6 +90,71 @@ def test_phone_detected_international_format():
     assert len(phones) == 1
 
 
+def test_phone_without_separators_detected():
+    # VAU-6 regression: bare 10-digit number must be caught by regex
+    detections = detect_regex_pii("My phone number is 1234567890 ok.")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 1
+    assert detections[0].type == "PHONE"
+
+
+async def test_vau6_full_repro_phone_name_email_all_redacted():
+    # Exact repro from VAU-6 issue report (name injected via fake LLM)
+    text = "My name is John Smith. My phone number is 1234567890 and my email is john@example.com."
+    llm_detections = [Detection(type="NAME", start=11, end=21, source="llm")]
+    result = await redact_text(text, llm_detector=FakeClaudeDetector(llm_detections))
+
+    assert "[NAME]" in result.redacted_text
+    assert "[PHONE]" in result.redacted_text
+    assert "[EMAIL]" in result.redacted_text
+    assert "1234567890" not in result.redacted_text
+    assert "john@example.com" not in result.redacted_text
+    assert "John Smith" not in result.redacted_text
+
+
+def test_phone_detected_contiguous_10_digit():
+    """Regression: 10-digit unseparated number like 1234567890 must be detected."""
+    detections = detect_regex_pii("My phone number is 1234567890")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 1
+    assert phones[0].source == "regex"
+
+
+def test_phone_detected_contiguous_11_digit_with_leading_1():
+    """Regression: 11-digit with leading 1 (e.g. 11234567890) must be detected."""
+    detections = detect_regex_pii("Call 11234567890 to reach us.")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 1
+
+
+async def test_redact_contiguous_phone_in_sentence():
+    """End-to-end: contiguous phone is redacted to [PHONE] in full sentence."""
+    text = "My phone number is 1234567890"
+    result = await redact_text(text, llm_detector=FakeClaudeDetector([]))
+    assert result.redacted_text == "My phone number is [PHONE]"
+    assert any(d.type == "PHONE" for d in result.detections)
+
+
+async def test_full_pii_sentence_name_phone_email():
+    """Integration: name + contiguous phone + email all redacted together."""
+    text = "My name is John Smith. My phone number is 1234567890 and my email is john@example.com."
+    llm_detections = [Detection(type="NAME", start=11, end=21, source="llm")]
+    result = await redact_text(text, llm_detector=FakeClaudeDetector(llm_detections))
+    assert "[NAME]" in result.redacted_text
+    assert "[PHONE]" in result.redacted_text
+    assert "[EMAIL]" in result.redacted_text
+    assert "John Smith" not in result.redacted_text
+    assert "1234567890" not in result.redacted_text
+    assert "john@example.com" not in result.redacted_text
+
+
+def test_contiguous_phone_does_not_trigger_credit_card():
+    """10-digit contiguous number must not produce a CREDIT_CARD detection."""
+    detections = detect_regex_pii("My phone number is 1234567890")
+    cards = [d for d in detections if d.type == "CREDIT_CARD"]
+    assert len(cards) == 0
+
+
 # ---------------------------------------------------------------------------
 # Credit card — individual coverage + Luhn gating
 # ---------------------------------------------------------------------------

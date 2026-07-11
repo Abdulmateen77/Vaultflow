@@ -29,7 +29,15 @@ class LLMDetector(Protocol):
 
 EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
-PHONE_RE = re.compile(r"(?<!\d)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}\b")
+PHONE_RE = re.compile(
+    r"(?<!\d)"
+    r"(?:\+?1[\s.-]?)?"
+    r"(?:"
+    r"(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}"  # formatted: (123) 456-7890 or 123-456-7890
+    r"|\d{10}"                                       # raw 10-digit: 1234567890 (VAU-6)
+    r")"
+    r"(?!\d)"
+)
 CREDIT_CARD_CANDIDATE_RE = re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")
 
 PLACEHOLDERS = {
