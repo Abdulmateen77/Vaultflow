@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vaultflow – API Reference</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --surface-2: #111827;
+      --border:    #2d3148;
+      --accent:    #6366f1;
+      --accent-h:  #818cf8;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --danger:    #f43f5e;
+      --success:   #10b981;
+      --warn:      #f59e0b;
+      --info:      #38bdf8;
+      --purple:    #c084fc;
+      --code-bg:   #0d1117;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: radial-gradient(circle at top left, rgba(99,102,241,0.12), transparent 34rem), var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 100vh;
+      padding: 24px 16px 72px;
+    }
+
+    /* ── Layout ── */
+    .page { max-width: 860px; margin: 0 auto; }
+
+    header { margin-bottom: 36px; }
+    header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+    header h1 span { color: var(--accent-h); }
+    header .sub { margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+    nav { margin-bottom: 20px; }
+    nav a { color: var(--muted); font-size: 13px; margin-right: 18px; text-decoration: none; }
+    nav a:hover, nav a.active { color: var(--accent-h); }
+
+    /* ── Table of Contents ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 32px;
+    }
+    .toc-title { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                 letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin-bottom: 4px; }
+    .toc a { color: var(--accent-h); font-size: 13px; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Section headings ── */
+    .section { margin-bottom: 40px; }
+    .section h2 {
+      font-size: 16px; font-weight: 700; letter-spacing: -0.01em;
+      color: var(--text); margin-bottom: 14px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border);
+    }
+    .section h3 { font-size: 13px; font-weight: 700; color: var(--muted);
+                  text-transform: uppercase; letter-spacing: 0.06em;
+                  margin: 20px 0 8px; }
+    .section p  { color: var(--text); margin-bottom: 12px; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+
+    /* ── Method badge ── */
+    .method {
+      border-radius: 4px; font-size: 11px; font-weight: 800;
+      letter-spacing: 0.06em; padding: 2px 7px; flex-shrink: 0;
+    }
+    .method-post { background: rgba(16,185,129,0.18); color: var(--success); }
+    .method-get  { background: rgba(56,189,248,0.18); color: var(--info); }
+
+    .endpoint-path {
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 14px; font-weight: 700; color: var(--text);
+    }
+    .endpoint-desc { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* ── Code blocks ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      overflow-x: auto;
+      padding: 16px;
+      margin: 10px 0 16px;
+    }
+
+    code {
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 12.5px;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent-h);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+    pre code { background: none; color: inherit; padding: 0; border-radius: 0; font-size: inherit; }
+
+    /* ── Syntax colouring (manual) ── */
+    .kw  { color: #c678dd; }   /* keywords / $  */
+    .str { color: #98c379; }   /* strings       */
+    .num { color: #d19a66; }   /* numbers        */
+    .cm  { color: #5c6370; }   /* comments       */
+    .key { color: var(--info); }   /* JSON keys  */
+    .val { color: #98c379; }   /* JSON values    */
+    .url { color: var(--accent-h); }
+
+    /* ── Tables ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+    th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--muted); padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(45,49,72,0.5); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td code { font-size: 12px; }
+
+    /* ── PII type chips ── */
+    .chip {
+      display: inline-block;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.04em; padding: 2px 9px; margin: 2px 2px;
+    }
+    .chip-EMAIL   { background: rgba(56,189,248,0.18); color: var(--info); }
+    .chip-PHONE   { background: rgba(16,185,129,0.18); color: var(--success); }
+    .chip-SSN     { background: rgba(244,63,94,0.18);  color: var(--danger); }
+    .chip-CC      { background: rgba(245,158,11,0.18); color: var(--warn); }
+    .chip-NAME    { background: rgba(99,102,241,0.18); color: var(--accent-h); }
+    .chip-ADDRESS { background: rgba(139,92,246,0.18); color: var(--purple); }
+
+    /* ── Alert boxes ── */
+    .alert {
+      border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 14px;
+    }
+    .alert-info  { background: rgba(56,189,248,0.1);  border: 1px solid rgba(56,189,248,0.3); color: var(--info); }
+    .alert-warn  { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.3); color: var(--warn); }
+
+    /* ── Status codes ── */
+    .status {
+      display: inline-block;
+      border-radius: 4px; font-size: 12px; font-weight: 700;
+      padding: 2px 8px; margin-right: 6px;
+    }
+    .s-2xx { background: rgba(16,185,129,0.18); color: var(--success); }
+    .s-4xx { background: rgba(245,158,11,0.18); color: var(--warn); }
+    .s-5xx { background: rgba(244,63,94,0.18);  color: var(--danger); }
+
+    footer {
+      text-align: center; color: var(--muted); font-size: 11px; margin-top: 56px;
+    }
+
+    /* ── Try-it panel ── */
+    .try-it { margin-top: 16px; }
+    .try-it textarea {
+      width: 100%;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      padding: 10px 12px;
+      resize: vertical;
+      min-height: 80px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .try-it textarea:focus { border-color: var(--accent); }
+    .try-btn {
+      background: var(--accent); border: none; border-radius: 6px;
+      color: #fff; cursor: pointer; font-size: 12px; font-weight: 700;
+      padding: 7px 18px; margin-top: 8px;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .try-btn:hover:not(:disabled) { background: var(--accent-h); }
+    .try-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .try-result {
+      display: none;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <nav>
+      <a href="/">Redaction Gateway</a>
+      <a href="/api-reference" class="active">API Docs</a>
+      <a href="/team">Team</a>
+    </nav>
+    <h1>Vault<span>flow</span> API Reference</h1>
+    <p class="sub">PII Redaction Gateway · v0.1.0 · REST/JSON</p>
+  </header>
+
+  <!-- Table of Contents -->
+  <div class="toc">
+    <div class="toc-title">On this page</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#base-url">Base URL</a></li>
+      <li><a href="#endpoints">Endpoints</a>
+        <ol>
+          <li><a href="#redact">POST /redact</a></li>
+          <li><a href="#health">GET /health</a></li>
+        </ol>
+      </li>
+      <li><a href="#pii-types">PII Entity Types</a></li>
+      <li><a href="#detection-pipeline">Detection Pipeline</a></li>
+      <li><a href="#error-codes">Error Codes</a></li>
+      <li><a href="#examples">Full Examples</a></li>
+      <li><a href="#sdk">SDK / Library Quickstart</a></li>
+    </ol>
+  </div>
+
+  <!-- ── 1. Overview ── -->
+  <div class="section" id="overview">
+    <h2>1. Overview</h2>
+    <p>
+      The Vaultflow PII Redaction Gateway is a single-endpoint REST API that detects and
+      redacts personally identifiable information (PII) from arbitrary text. It combines
+      high-recall regex detection for structured PII (email, phone, SSN, credit card) with
+      LLM-backed detection for unstructured PII (names, addresses).
+    </p>
+    <div class="alert alert-info">
+      All PII is replaced in-place with bracketed placeholders — e.g.
+      <code>[EMAIL]</code>, <code>[NAME]</code> — and exact character offsets of every
+      detection are returned so your downstream system can audit or highlight redacted spans.
+    </div>
+    <p>
+      The API is stateless, requires no authentication key in MVP, and returns JSON.
+      Average latency for text under 500 tokens is &lt; 800 ms end-to-end (regex: &lt; 1 ms,
+      LLM pass: ~700 ms on Claude Sonnet).
+    </p>
+  </div>
+
+  <!-- ── 2. Base URL ── -->
+  <div class="section" id="base-url">
+    <h2>2. Base URL</h2>
+    <div class="card">
+      <div class="card-row">
+        <span class="endpoint-path">https://&lt;your-vaultflow-host&gt;</span>
+      </div>
+      <div class="endpoint-desc">
+        Replace <code>&lt;your-vaultflow-host&gt;</code> with the hostname where the gateway
+        is deployed. In local dev this is <code>http://localhost:8000</code>.
+      </div>
+    </div>
+    <p>All paths below are relative to the base URL. The API serves only HTTPS in production.</p>
+  </div>
+
+  <!-- ── 3. Endpoints ── -->
+  <div class="section" id="endpoints">
+    <h2>3. Endpoints</h2>
+
+    <!-- POST /redact -->
+    <div class="card" id="redact">
+      <div class="card-row">
+        <span class="method method-post">POST</span>
+        <span class="endpoint-path">/redact</span>
+      </div>
+      <div class="endpoint-desc">Detect and redact all PII from a text string.</div>
+
+      <h3>Request headers</h3>
+      <table>
+        <tr><th>Header</th><th>Required</th><th>Value</th></tr>
+        <tr>
+          <td><code>Content-Type</code></td>
+          <td>Yes</td>
+          <td><code>application/json</code></td>
+        </tr>
+      </table>
+
+      <h3>Request body</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr>
+          <td><code>text</code></td>
+          <td><code>string</code></td>
+          <td>Yes</td>
+          <td>The raw text to scan. Must be non-empty and not all whitespace. No length hard cap in MVP; keep under 8 000 tokens for best LLM latency.</td>
+        </tr>
+      </table>
+
+      <h3>Example request</h3>
+<pre><span class="kw">curl</span> -sS -X POST <span class="url">https://&lt;host&gt;/redact</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{
+    "text": "Hi, I am Jane Doe. Email me at jane@acme.com or call 415-555-0192. SSN 123-45-6789."
+  }'</span></pre>
+
+      <h3>Response body (200 OK)</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr>
+          <td><code>redacted_text</code></td>
+          <td><code>string</code></td>
+          <td>The original text with every detected PII span replaced by its placeholder token.</td>
+        </tr>
+        <tr>
+          <td><code>detections</code></td>
+          <td><code>array&lt;Detection&gt;</code></td>
+          <td>Ordered list of detected PII spans (sorted by start offset ascending).</td>
+        </tr>
+      </table>
+
+      <h3>Detection object</h3>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr>
+          <td><code>type</code></td>
+          <td><code>string</code></td>
+          <td>PII entity type. One of: <code>EMAIL</code>, <code>PHONE</code>, <code>SSN</code>, <code>CREDIT_CARD</code>, <code>NAME</code>, <code>ADDRESS</code>.</td>
+        </tr>
+        <tr>
+          <td><code>start</code></td>
+          <td><code>integer</code></td>
+          <td>Inclusive start character offset in the <em>original</em> text (0-indexed).</td>
+        </tr>
+        <tr>
+          <td><code>end</code></td>
+          <td><code>integer</code></td>
+          <td>Exclusive end character offset in the original text. Span is <code>text[start:end]</code>.</td>
+        </tr>
+        <tr>
+          <td><code>source</code></td>
+          <td><code>string</code></td>
+          <td><code>regex</code> — detected by pattern matching; <code>llm</code> — detected by the Claude LLM pass.</td>
+        </tr>
+      </table>
+
+      <h3>Example response</h3>
+<pre>{
+  <span class="key">"redacted_text"</span>: <span class="val">"Hi, I am [NAME]. Email me at [EMAIL] or call [PHONE]. SSN [SSN]."</span>,
+  <span class="key">"detections"</span>: [
+    { <span class="key">"type"</span>: <span class="val">"NAME"</span>,  <span class="key">"start"</span>: <span class="num">9</span>,  <span class="key">"end"</span>: <span class="num">17</span>, <span class="key">"source"</span>: <span class="val">"llm"</span>   },
+    { <span class="key">"type"</span>: <span class="val">"EMAIL"</span>, <span class="key">"start"</span>: <span class="num">32</span>, <span class="key">"end"</span>: <span class="num">45</span>, <span class="key">"source"</span>: <span class="val">"regex"</span> },
+    { <span class="key">"type"</span>: <span class="val">"PHONE"</span>, <span class="key">"start"</span>: <span class="num">55</span>, <span class="key">"end"</span>: <span class="num">67</span>, <span class="key">"source"</span>: <span class="val">"regex"</span> },
+    { <span class="key">"type"</span>: <span class="val">"SSN"</span>,   <span class="key">"start"</span>: <span class="num">73</span>, <span class="key">"end"</span>: <span class="num">84</span>, <span class="key">"source"</span>: <span class="val">"regex"</span> }
+  ]
+}</pre>
+
+      <!-- Try it -->
+      <div class="try-it">
+        <h3>Try it</h3>
+        <textarea id="try-input" placeholder="Paste text to redact…">Hi, I am Jane Doe. Email me at jane@acme.com or call 415-555-0192.</textarea>
+        <button class="try-btn" id="try-btn">Run request</button>
+        <div class="try-result" id="try-result">
+          <pre id="try-output"></pre>
+        </div>
+      </div>
+    </div><!-- /.card #redact -->
+
+    <!-- GET /health -->
+    <div class="card" id="health">
+      <div class="card-row">
+        <span class="method method-get">GET</span>
+        <span class="endpoint-path">/health</span>
+      </div>
+      <div class="endpoint-desc">Liveness probe. Returns HTTP 200 when the gateway is up.</div>
+
+      <h3>Response body (200 OK)</h3>
+<pre>{ <span class="key">"status"</span>: <span class="val">"ok"</span> }</pre>
+
+      <h3>Example</h3>
+<pre><span class="kw">curl</span> <span class="url">https://&lt;host&gt;/health</span></pre>
+    </div>
+
+  </div><!-- /.section #endpoints -->
+
+  <!-- ── 4. PII Types ── -->
+  <div class="section" id="pii-types">
+    <h2>4. PII Entity Types</h2>
+    <div style="margin-bottom: 14px;">
+      <span class="chip chip-EMAIL">EMAIL</span>
+      <span class="chip chip-PHONE">PHONE</span>
+      <span class="chip chip-SSN">SSN</span>
+      <span class="chip chip-CC">CREDIT_CARD</span>
+      <span class="chip chip-NAME">NAME</span>
+      <span class="chip chip-ADDRESS">ADDRESS</span>
+    </div>
+    <table>
+      <tr><th>Type</th><th>Placeholder</th><th>Detector</th><th>Pattern / Notes</th></tr>
+      <tr>
+        <td><code>EMAIL</code></td>
+        <td><code>[EMAIL]</code></td>
+        <td>Regex</td>
+        <td>RFC-5321 local-part @ domain. e.g. <code>alice@example.com</code></td>
+      </tr>
+      <tr>
+        <td><code>PHONE</code></td>
+        <td><code>[PHONE]</code></td>
+        <td>Regex</td>
+        <td>
+          US numbers — formatted: <code>(415) 555-0192</code>, <code>415-555-0192</code>,
+          <code>415.555.0192</code>; raw 10-digit: <code>4155550192</code>;
+          optional +1 country code prefix.
+        </td>
+      </tr>
+      <tr>
+        <td><code>SSN</code></td>
+        <td><code>[SSN]</code></td>
+        <td>Regex</td>
+        <td>US Social Security Numbers in dashed format: <code>###-##-####</code></td>
+      </tr>
+      <tr>
+        <td><code>CREDIT_CARD</code></td>
+        <td><code>[CREDIT_CARD]</code></td>
+        <td>Regex + Luhn</td>
+        <td>
+          13–19 digit sequences (with optional spaces or dashes), validated with the
+          Luhn algorithm to minimise false positives. Covers Visa, Mastercard, Amex,
+          Discover.
+        </td>
+      </tr>
+      <tr>
+        <td><code>NAME</code></td>
+        <td><code>[NAME]</code></td>
+        <td>LLM (Claude)</td>
+        <td>
+          Full personal names detected in context. Handles first-only, first+last,
+          titles (Dr., Mr., Mrs.), and non-Western name patterns.
+        </td>
+      </tr>
+      <tr>
+        <td><code>ADDRESS</code></td>
+        <td><code>[ADDRESS]</code></td>
+        <td>LLM (Claude)</td>
+        <td>
+          Physical street addresses. Includes house number + street, city, state, ZIP.
+          Does not flag country names alone.
+        </td>
+      </tr>
+    </table>
+    <div class="alert alert-warn">
+      Overlapping detections are resolved automatically. The gateway merges spans
+      so no character is redacted twice. Regex detections take precedence over LLM
+      detections when spans overlap.
+    </div>
+  </div>
+
+  <!-- ── 5. Detection Pipeline ── -->
+  <div class="section" id="detection-pipeline">
+    <h2>5. Detection Pipeline</h2>
+    <p>Every <code>POST /redact</code> call runs two passes in parallel:</p>
+    <table>
+      <tr><th>Pass</th><th>What it catches</th><th>Latency</th></tr>
+      <tr>
+        <td>Regex</td>
+        <td>EMAIL, PHONE, SSN, CREDIT_CARD</td>
+        <td>&lt; 1 ms</td>
+      </tr>
+      <tr>
+        <td>LLM (Claude Sonnet)</td>
+        <td>NAME, ADDRESS</td>
+        <td>~500–900 ms</td>
+      </tr>
+    </table>
+    <p>
+      Results from both passes are merged into a single ordered list of
+      non-overlapping <code>Detection</code> objects. The merged list is used to
+      rewrite the text and is returned in the response.
+    </p>
+    <p>
+      The gateway fails closed: if the observability log write fails (e.g. Convex
+      unavailable), the request returns <code>502</code> rather than silently
+      skipping the audit trail.
+    </p>
+  </div>
+
+  <!-- ── 6. Error codes ── -->
+  <div class="section" id="error-codes">
+    <h2>6. Error Codes</h2>
+    <table>
+      <tr><th>Status</th><th>Condition</th><th>Response body</th></tr>
+      <tr>
+        <td><span class="status s-2xx">200</span></td>
+        <td>Success</td>
+        <td><code>{ "redacted_text": "…", "detections": […] }</code></td>
+      </tr>
+      <tr>
+        <td><span class="status s-4xx">422</span></td>
+        <td>Validation error — <code>text</code> is missing, empty, or all whitespace</td>
+        <td><code>{ "detail": [{ "msg": "text must not be blank", … }] }</code></td>
+      </tr>
+      <tr>
+        <td><span class="status s-5xx">502</span></td>
+        <td>Upstream error — audit log write to Convex failed</td>
+        <td><code>{ "detail": "redaction log write failed" }</code></td>
+      </tr>
+    </table>
+
+    <h3>Handling errors</h3>
+    <p>Treat <code>422</code> as a client error (fix the request). Treat <code>502</code>
+    as a transient server error — retry with exponential back-off. The gateway does not
+    partially redact: if you receive a non-200, the original text was not modified.</p>
+  </div>
+
+  <!-- ── 7. Full Examples ── -->
+  <div class="section" id="examples">
+    <h2>7. Full Examples</h2>
+
+    <h3>Redact a patient intake note (healthcare / HIPAA context)</h3>
+<pre><span class="kw">curl</span> -sS -X POST <span class="url">https://&lt;host&gt;/redact</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{
+    "text": "Patient: Maria Santos, DOB 1988-03-14. SSN 987-65-4321. Contact: maria.santos@gmail.com, (312) 867-5309. Address: 400 N Michigan Ave, Chicago, IL 60611."
+  }'</span> | python -m json.tool</pre>
+
+<pre><span class="cm">// Response</span>
+{
+  <span class="key">"redacted_text"</span>: <span class="val">"Patient: [NAME], DOB 1988-03-14. SSN [SSN]. Contact: [EMAIL], [PHONE]. Address: [ADDRESS]."</span>,
+  <span class="key">"detections"</span>: [
+    { <span class="key">"type"</span>: <span class="val">"NAME"</span>,    <span class="key">"start"</span>: <span class="num">9</span>,   <span class="key">"end"</span>: <span class="num">21</span>,  <span class="key">"source"</span>: <span class="val">"llm"</span>   },
+    { <span class="key">"type"</span>: <span class="val">"SSN"</span>,     <span class="key">"start"</span>: <span class="num">42</span>,  <span class="key">"end"</span>: <span class="num">53</span>,  <span class="key">"source"</span>: <span class="val">"regex"</span> },
+    { <span class="key">"type"</span>: <span class="val">"EMAIL"</span>,   <span class="key">"start"</span>: <span class="num">64</span>,  <span class="key">"end"</span>: <span class="num">88</span>,  <span class="key">"source"</span>: <span class="val">"regex"</span> },
+    { <span class="key">"type"</span>: <span class="val">"PHONE"</span>,   <span class="key">"start"</span>: <span class="num">90</span>,  <span class="key">"end"</span>: <span class="num">104</span>, <span class="key">"source"</span>: <span class="val">"regex"</span> },
+    { <span class="key">"type"</span>: <span class="val">"ADDRESS"</span>, <span class="key">"start"</span>: <span class="num">114</span>, <span class="key">"end"</span>: <span class="num">151</span>, <span class="key">"source"</span>: <span class="val">"llm"</span>   }
+  ]
+}</pre>
+
+    <h3>Python (requests)</h3>
+<pre><span class="kw">import</span> requests
+
+resp = requests.post(
+    <span class="str">"https://&lt;host&gt;/redact"</span>,
+    json={<span class="str">"text"</span>: <span class="str">"Call John Smith at john@example.com"</span>},
+    timeout=<span class="num">10</span>,
+)
+resp.raise_for_status()
+data = resp.json()
+print(data[<span class="str">"redacted_text"</span>])   <span class="cm"># "Call [NAME] at [EMAIL]"</span>
+print(data[<span class="str">"detections"</span>])      <span class="cm"># list of Detection dicts</span></pre>
+
+    <h3>JavaScript / Node (fetch)</h3>
+<pre><span class="kw">const</span> res = <span class="kw">await</span> fetch(<span class="str">"https://&lt;host&gt;/redact"</span>, {
+  method: <span class="str">"POST"</span>,
+  headers: { <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span> },
+  body: JSON.stringify({ text: <span class="str">"Billing card: 4111 1111 1111 1111"</span> }),
+});
+<span class="kw">const</span> { redacted_text, detections } = <span class="kw">await</span> res.json();
+console.log(redacted_text);   <span class="cm">// "Billing card: [CREDIT_CARD]"</span></pre>
+
+    <h3>Health check</h3>
+<pre><span class="kw">curl</span> <span class="url">https://&lt;host&gt;/health</span>
+<span class="cm"># {"status":"ok"}</span></pre>
+  </div>
+
+  <!-- ── 8. SDK / Integration ── -->
+  <div class="section" id="sdk">
+    <h2>8. SDK / Library Quickstart</h2>
+    <p>
+      No dedicated SDK yet — the API surface is small enough that a thin wrapper is
+      all you need. Here is a reusable Python helper:
+    </p>
+<pre><span class="kw">import</span> httpx   <span class="cm"># pip install httpx</span>
+
+<span class="kw">class</span> VaultflowClient:
+    <span class="kw">def</span> __init__(self, base_url: str):
+        self._base = base_url.rstrip(<span class="str">"/"</span>)
+
+    <span class="kw">def</span> redact(self, text: str) -> dict:
+        r = httpx.post(
+            f<span class="str">"{self._base}/redact"</span>,
+            json={<span class="str">"text"</span>: text},
+            timeout=<span class="num">15.0</span>,
+        )
+        r.raise_for_status()
+        <span class="kw">return</span> r.json()
+
+<span class="cm"># Usage</span>
+client = VaultflowClient(<span class="str">"https://&lt;host&gt;"</span>)
+result = client.redact(<span class="str">"Jane Doe, SSN 123-45-6789"</span>)
+print(result[<span class="str">"redacted_text"</span>])   <span class="cm"># "[NAME], SSN [SSN]"</span></pre>
+
+    <div class="alert alert-info">
+      Official Python and Node SDKs are on the roadmap. Drop your use case at
+      <a href="mailto:hello@vaultflow.ai" style="color:var(--info)">hello@vaultflow.ai</a>
+      to get early access.
+    </div>
+  </div>
+
+  <footer>Vaultflow PII Redaction Gateway · API Reference · v0.1.0</footer>
+
+</div><!-- /.page -->
+
+<script>
+  const btn    = document.getElementById('try-btn');
+  const input  = document.getElementById('try-input');
+  const result = document.getElementById('try-result');
+  const output = document.getElementById('try-output');
+
+  btn.addEventListener('click', async () => {
+    const text = input.value.trim();
+    if (!text) return;
+    btn.disabled = true;
+    btn.textContent = 'Running…';
+    result.style.display = 'none';
+    try {
+      const res = await fetch('/redact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      output.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      output.textContent = 'Error: ' + e.message;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Run request';
+      result.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>
