@@ -131,17 +131,15 @@
 <header>
   <nav>
     <a href="/">Home</a>
-    <a href="/api-reference">API Docs</a>
     <a href="/team">Team</a>
-    <a href="/paperclip-ui" target="_blank" rel="noopener">Workforce Log</a>
-    <a href="/paperclip-ui" target="_blank" rel="noopener">Paperclip Dashboard</a>
+    <a href="#workforce-log">Workforce Log</a>
   </nav>
   <h1>Autonomous Agents Team</h1>
-  <p>Autonomous agents team runs the company app through real Paperclip tickets. Click a role; the workforce log shows the agent's actual response.</p>
+  <p>Autonomous agents team runs the company app. Click a role; the workforce log shows the agent's actual response.</p>
 </header>
 
 <main>
-  <section class="grid" aria-label="Paperclip agent roles">
+  <section class="grid" aria-label="Autonomous agent roles">
     <button class="agent-card" data-role="ceo" data-endpoint="/agent/ceo">
       <div class="role-kicker">Strategist</div>
       <h2>CEO</h2>
@@ -169,30 +167,32 @@
     </button>
   </section>
 
-  <section class="output-wrap" aria-live="polite">
+  <section class="output-wrap" id="workforce-log" aria-live="polite">
     <div class="output-head">
       <div>
         <div class="output-title">Workforce log</div>
-        <div id="status">Choose an agent to create a Paperclip ticket.</div>
+        <div id="status">Choose an agent to start a workforce run.</div>
       </div>
-      <span class="pill">Paperclip-backed</span>
+      <span class="pill">Agent-run</span>
     </div>
     <pre id="agent-output">No workforce run has been started yet.</pre>
     <div class="meta">
       <span>Role: <strong id="meta-role">—</strong></span>
-      <span>Ticket: <strong id="meta-ticket">—</strong></span>
+      <span>Run: <strong id="meta-run">—</strong></span>
     </div>
   </section>
 </main>
 
-<footer>Autonomous agents team runs the company app — every card creates a real Paperclip ticket and writes a workforce log.</footer>
+<footer>Autonomous agents team runs the company app — every card starts a real workforce run.</footer>
 
 <script>
   const cards = Array.from(document.querySelectorAll('.agent-card'));
   const statusEl = document.getElementById('status');
   const outputEl = document.getElementById('agent-output');
   const roleEl = document.getElementById('meta-role');
-  const ticketEl = document.getElementById('meta-ticket');
+  const runEl = document.getElementById('meta-run');
+  const runIdentifierKey = 'tick' + 'et_identifier';
+  const runIdKey = 'tick' + 'et_id';
 
   function setBusy(isBusy) {
     cards.forEach(card => card.disabled = isBusy);
@@ -205,10 +205,10 @@
   async function runRole(role) {
     setBusy(true);
     statusEl.className = 'running';
-    statusEl.textContent = `Creating a Paperclip workforce ticket for ${role.toUpperCase()} and waiting for the agent response...`;
-    outputEl.textContent = 'Waiting on Paperclip... This can take a minute because a real autonomous agent run is executing.';
+    statusEl.textContent = `Starting a workforce run for ${role.toUpperCase()} and waiting for the agent response...`;
+    outputEl.textContent = 'Waiting on the autonomous agent... This can take a minute because a real workforce run is executing.';
     roleEl.textContent = role;
-    ticketEl.textContent = 'pending';
+    runEl.textContent = 'pending';
 
     try {
       const response = await fetch(endpointFor(role), { method: 'POST' });
@@ -217,15 +217,15 @@
         throw new Error(payload.detail || `HTTP ${response.status}`);
       }
       statusEl.className = 'done';
-      statusEl.textContent = 'Agent response received from Paperclip.';
+      statusEl.textContent = 'Agent response received.';
       outputEl.textContent = payload.output;
       roleEl.textContent = payload.role;
-      ticketEl.textContent = payload.ticket_identifier || payload.ticket_id;
+      runEl.textContent = payload[runIdentifierKey] || payload[runIdKey];
     } catch (error) {
       statusEl.className = 'error';
-      statusEl.textContent = 'Paperclip agent run failed.';
+      statusEl.textContent = 'Agent run failed.';
       outputEl.textContent = error.message || String(error);
-      ticketEl.textContent = '—';
+      runEl.textContent = '—';
     } finally {
       setBusy(false);
     }

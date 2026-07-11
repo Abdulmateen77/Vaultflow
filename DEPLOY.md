@@ -17,47 +17,13 @@ curl https://king-til-aqua-editorials.trycloudflare.com/health
 # {"status":"ok"}
 
 curl https://king-til-aqua-editorials.trycloudflare.com/team
-# Serves the Paperclip Team page with CEO, CTO, Sales, Marketing, Finance cards.
+# Serves the Autonomous Agents Team page with CEO, CTO, Sales, Marketing, Finance cards.
 
 curl -X POST https://king-til-aqua-editorials.trycloudflare.com/redact \
   -H 'Content-Type: application/json' \
   -d '{"text":"Cloud check: Jane Doe, jane@example.com, 1234567890."}'
 # {"redacted_text":"Cloud check: [NAME], [EMAIL], [PHONE].", ...}
 ```
-
-### Public Paperclip UI URL
-
-```text
-https://presidential-rna-habits-tiles.trycloudflare.com
-```
-
-The frontend links to this through:
-
-```text
-/paperclip-ui
-```
-
-Verified redirect:
-
-```bash
-curl -I https://king-til-aqua-editorials.trycloudflare.com/paperclip-ui
-# Location: https://presidential-rna-habits-tiles.trycloudflare.com
-```
-
-Verified Paperclip public health:
-
-```bash
-curl https://presidential-rna-habits-tiles.trycloudflare.com/api/health
-# {"status":"ok", ...}
-```
-
-Paperclip hostname allowlist was updated with:
-
-```bash
-npx paperclipai allowed-hostname presidential-rna-habits-tiles.trycloudflare.com
-```
-
-Paperclip was restarted afterward so the hostname allowlist took effect.
 
 ### Convex Cloud deployment
 
@@ -156,7 +122,7 @@ npx convex dev
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Paperclip backend/UI
+### Agent workforce backend
 
 ```bash
 npx paperclipai run
@@ -168,21 +134,6 @@ FastAPI/frontend tunnel:
 
 ```bash
 npx cloudflared tunnel --url http://127.0.0.1:8000
-```
-
-Paperclip UI tunnel:
-
-```bash
-npx cloudflared tunnel --url http://127.0.0.1:3100
-```
-
-If the Paperclip tunnel slug changes, allowlist the new hostname and update `.env`:
-
-```bash
-npx paperclipai allowed-hostname <new-slug>.trycloudflare.com
-# restart Paperclip
-# update PAPERCLIP_PUBLIC_URL=https://<new-slug>.trycloudflare.com
-# restart FastAPI
 ```
 
 ## Dedicated-domain blocker
@@ -199,18 +150,10 @@ To move from quick tunnels to stable dedicated domains, authenticate Cloudflare 
 ```bash
 npx cloudflared tunnel login
 npx cloudflared tunnel create vaultflow-api
-npx cloudflared tunnel create vaultflow-paperclip
 npx cloudflared tunnel route dns vaultflow-api <api-hostname>
-npx cloudflared tunnel route dns vaultflow-paperclip <paperclip-hostname>
 ```
 
-Then update:
-
-```text
-PAPERCLIP_PUBLIC_URL=https://<paperclip-hostname>
-```
-
-and restart FastAPI.
+Then restart FastAPI.
 
 ## Full verification checklist
 
@@ -219,8 +162,6 @@ uv run pytest -q
 
 curl https://king-til-aqua-editorials.trycloudflare.com/health
 curl https://king-til-aqua-editorials.trycloudflare.com/team
-curl -I https://king-til-aqua-editorials.trycloudflare.com/paperclip-ui
-curl https://presidential-rna-habits-tiles.trycloudflare.com/api/health
 
 curl -X POST https://king-til-aqua-editorials.trycloudflare.com/redact \
   -H 'Content-Type: application/json' \

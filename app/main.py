@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import pathlib
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
@@ -67,17 +66,6 @@ def team() -> FileResponse:
     return FileResponse(_STATIC_DIR / "team.html")
 
 
-@app.get("/api-reference", include_in_schema=False)
-def api_docs() -> FileResponse:
-    return FileResponse(_STATIC_DIR / "docs.html")
-
-
-@app.get("/paperclip-ui", include_in_schema=False)
-def paperclip_ui() -> RedirectResponse:
-    target = os.getenv("PAPERCLIP_PUBLIC_URL", "http://127.0.0.1:3100").rstrip("/")
-    return RedirectResponse(target)
-
-
 @app.post("/agent/{role}", response_model=AgentResponse)
 async def run_agent(role: str) -> AgentResponse:
     normalized_role = role.lower().strip()
@@ -91,7 +79,7 @@ async def run_agent(role: str) -> AgentResponse:
     except TimeoutError as exc:
         raise HTTPException(status_code=504, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Paperclip agent run failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail=f"Agent run failed: {exc}") from exc
 
     return _agent_response(result)
 
