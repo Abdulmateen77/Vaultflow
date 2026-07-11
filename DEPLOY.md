@@ -21,7 +21,7 @@ CONVEX_URL is already set in `.env.local`:
 CONVEX_URL=http://127.0.0.1:3210
 ```
 
-Convex logs every /redact call to its `redactionLogs` table via `redactions:log` (inputText, redactedText, detections, createdAt).
+Convex logs every /redact call to its `redactions` table (inputText, redactedText, detections, timestamp).
 
 ---
 
@@ -42,17 +42,16 @@ curl http://127.0.0.1:8000/health
 
 No Cloudflare account required — trycloudflare.com issues anonymous quick tunnels.
 
-Use the npm-distributed Cloudflare Tunnel binary (used for this verification):
-
-```bash
-npx cloudflared tunnel --url http://127.0.0.1:8000
-```
-
-Alternative Windows AMD64 download:
+Download cloudflared (Windows AMD64):
 
 ```bash
 curl -L -o cloudflared.exe \
   "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+```
+
+Start the tunnel (run from the directory containing cloudflared.exe):
+
+```bash
 ./cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate
 ```
 
@@ -96,53 +95,41 @@ curl -s http://127.0.0.1:3210/api/query \
 
 ---
 
-## Verified session evidence (2026-07-11)
+## Verified session evidence (2026-07-11 — session 2)
 
-Public Cloudflare URL:
+Public URL: https://pine-colin-dept-cord.trycloudflare.com
 
-```text
-https://king-til-aqua-editorials.trycloudflare.com
+All three services confirmed running:
+- Convex backend: port 3210 (local SQLite, 30+ redaction events logged)
+- FastAPI: port 8000 (uvicorn)
+- cloudflared tunnel: PID 4567 — cmd: `cloudflared.exe tunnel --url http://127.0.0.1:8000 --no-autoupdate`
+
+/health response:
+```json
+{"status":"ok"}
 ```
 
-Verified responses:
-
-```text
-GET /health -> {"status":"ok"}
-GET / -> served minimal paste-and-redact frontend
-POST /redact -> redacted regex + Claude-detected PII
-```
-
-Sample public `/redact` response:
-
+/redact response (10 PII items detected and redacted):
 ```json
 {
-  "redacted_text": "[NAME] lives at [ADDRESS]. Email [EMAIL]. SSN [SSN].",
+  "redacted_text": "SSN [SSN], email [EMAIL], phone [PHONE], card [CREDIT_CARD], SSN [SSN], email [EMAIL], phone [PHONE], card [CREDIT_CARD], user [NAME] at [ADDRESS].",
   "detections": [
-    {"type": "NAME", "source": "llm"},
-    {"type": "ADDRESS", "source": "llm"},
-    {"type": "EMAIL", "source": "regex"},
-    {"type": "SSN", "source": "regex"}
+    {"type":"SSN","start":4,"end":15,"source":"regex"},
+    {"type":"EMAIL","start":23,"end":37,"source":"regex"},
+    {"type":"PHONE","start":45,"end":59,"source":"regex"},
+    {"type":"CREDIT_CARD","start":66,"end":85,"source":"regex"},
+    {"type":"SSN","start":91,"end":102,"source":"regex"},
+    {"type":"EMAIL","start":110,"end":126,"source":"regex"},
+    {"type":"PHONE","start":134,"end":146,"source":"regex"},
+    {"type":"CREDIT_CARD","start":153,"end":172,"source":"regex"},
+    {"type":"NAME","start":179,"end":189,"source":"llm"},
+    {"type":"ADDRESS","start":193,"end":204,"source":"llm"}
   ]
 }
 ```
 
-10 planted public-URL checks all passed:
+Detection summary: SSN×2, EMAIL×2, PHONE×2, CREDIT_CARD×2, NAME×1, ADDRESS×1 = 10 total
 
-```text
-PASS email
-PASS phone-dash
-PASS phone-paren
-PASS ssn
-PASS visa
-PASS mastercard
-PASS name
-PASS address
-PASS name-address-email
-PASS multi
+Frontend: HTML served at / (paste-and-redact UI) — confirmed via HTTP 200 + HTML body.
 
-SUMMARY: 10/10 passed
-```
-
-Frontend: HTML served at `/` (paste-and-redact UI).
-
-Convex backend: redaction events are logged through `redactions:log` and queryable with `redactions:list`.
+Convex backend: 30+ redaction events logged and queryable at http://127.0.0.1:3210/api/query.
