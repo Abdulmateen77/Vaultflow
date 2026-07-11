@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from app.observability import log_redaction
 from app.paperclip_agents import AgentRunResult, TASK_PROMPTS, UnknownAgentRoleError, run_agent_role
 from app.redactor import Detection, redact_text
+from app import waitlist
 
 load_dotenv()
 load_dotenv(".env.local", override=False)
@@ -52,6 +53,25 @@ class AgentResponse(BaseModel):
     output: str
 
 
+class EarlyAccessRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=300)
+    company: str = Field(min_length=1, max_length=200)
+    use_case: str = Field(default="General", max_length=100)
+
+    @field_validator("email")
+    @classmethod
+    def email_must_contain_at(cls, value: str) -> str:
+        if "@" not in value or "." not in value.split("@")[-1]:
+            raise ValueError("must be a valid work email address")
+        return value.lower().strip()
+
+
+class EarlyAccessResponse(BaseModel):
+    message: str
+    already_registered: bool = False
+
+
 @app.get("/", include_in_schema=False)
 def root() -> FileResponse:
     return FileResponse(_STATIC_DIR / "index.html")
@@ -65,6 +85,11 @@ def health() -> dict[str, str]:
 @app.get("/team", include_in_schema=False)
 def team() -> FileResponse:
     return FileResponse(_STATIC_DIR / "team.html")
+
+
+@app.get("/early-access", include_in_schema=False)
+def early_access_page() -> FileResponse:
+    return FileResponse(_STATIC_DIR / "early-access.html")
 
 
 @app.get("/paperclip-ui", include_in_schema=False)
@@ -89,6 +114,23 @@ async def run_agent(role: str) -> AgentResponse:
         raise HTTPException(status_code=502, detail=f"Agent run failed: {exc}") from exc
 
     return _agent_response(result)
+
+
+@app.post("/waitlist", response_model=EarlyAccessResponse)
+async def join_waitlist(request: EarlyAccessRequest) -> EarlyAccessResponse:
+    """Store an early-access lead and return a confirmation message."""
+    already = waitlist.lead_exists(request.email)
+    if not already:
+        waitlist.insert_lead(
+            name=request.name,
+            email=request.email,
+            company=request.company,
+            use_case=request.use_case,
+        )
+    return EarlyAccessResponse(
+        message="You're on the list. Expect a note from us within 24 hours.",
+        already_registered=already,
+    )
 
 
 @app.post("/redact", response_model=RedactResponse)

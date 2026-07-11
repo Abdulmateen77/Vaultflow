@@ -65,6 +65,50 @@
 
     nav a:hover { color: var(--accent-h); }
 
+    /* Early-access CTA banner */
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(129,140,248,0.10));
+      border: 1px solid rgba(99,102,241,0.35);
+      border-radius: 12px;
+      max-width: 780px;
+      margin: 0 auto 24px;
+      padding: 28px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    .cta-text h2 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .cta-text p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .cta-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: 7px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px 24px;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: background 0.15s;
+      display: inline-block;
+    }
+
+    .cta-btn:hover { background: var(--accent-h); }
+
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -257,6 +301,88 @@
       letter-spacing: 0.06em;
     }
 
+    /* Early Access form */
+    .ea-section {
+      max-width: 780px;
+      margin: 32px auto 0;
+      background: linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(129,140,248,0.06) 100%);
+      border: 1px solid rgba(99,102,241,0.35);
+      border-radius: 12px;
+      padding: 28px 28px 24px;
+    }
+
+    .ea-section h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .ea-section p.ea-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .ea-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .ea-form .full-row { grid-column: 1 / -1; }
+
+    .ea-form input,
+    .ea-form select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 13px;
+      padding: 9px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .ea-form input:focus,
+    .ea-form select:focus { border-color: var(--accent); }
+
+    .ea-form select option { background: var(--surface); }
+
+    #ea-submit {
+      background: var(--accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 24px;
+      transition: background 0.15s, opacity 0.15s;
+      width: 100%;
+    }
+
+    #ea-submit:hover:not(:disabled) { background: var(--accent-h); }
+    #ea-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    #ea-confirm {
+      display: none;
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      padding: 12px 0 4px;
+    }
+
+    #ea-error {
+      display: none;
+      color: var(--danger);
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
     footer {
       text-align: center;
       color: var(--muted);
@@ -272,11 +398,20 @@
     <a href="/">Home</a>
     <a href="/team">Team</a>
     <a href="/paperclip-ui" target="_blank" rel="noopener">Workforce Log</a>
+    <a href="/early-access" style="color:var(--accent-h);font-weight:600;">Request Early Access</a>
   </nav>
   <h1>Vaultflow AI Observance Tool</h1>
   <p>AI Security Gateway + Governance Platform that protects sensitive data in real time, gives leaders visibility and control, and is run fully autonomously by agents.</p>
   <p>Run fully autonomously by agents.</p>
 </header>
+
+<div class="cta-banner">
+  <div class="cta-text">
+    <h2>Get early access to the PII Redaction Gateway</h2>
+    <p>Join compliance-conscious engineering teams already evaluating Vaultflow. We'll reach out within 24 hours.</p>
+  </div>
+  <a class="cta-btn" href="/early-access">Request Access</a>
+</div>
 
 <div class="card">
   <label for="input-text">Input text</label>
@@ -310,8 +445,29 @@
   <div id="detections-list"></div>
 </div>
 
-<footer>Vaultflow AI Observance Tool · Agent-run security gateway</footer>
+<section class="ea-section" id="early-access">
+  <h2>Get early access to the PII Redaction Gateway</h2>
+  <p class="ea-sub">Join compliance-conscious engineering teams already evaluating Vaultflow. We'll reach out within 24 hours.</p>
 
+  <form class="ea-form" id="ea-form" novalidate>
+    <input type="text"  id="ea-name"    placeholder="Your name"       required />
+    <input type="email" id="ea-email"   placeholder="Work email"      required />
+    <input type="text"  id="ea-company" placeholder="Company"         required />
+    <select id="ea-usecase">
+      <option value="HIPAA">HIPAA / Healthcare</option>
+      <option value="PCI">PCI / Finance</option>
+      <option value="Legal">Legal / Compliance</option>
+      <option value="General" selected>General / Other</option>
+    </select>
+    <div class="full-row">
+      <button type="submit" id="ea-submit">Request Access</button>
+      <div id="ea-error"></div>
+    </div>
+  </form>
+  <div id="ea-confirm">You're on the list. Expect a note from us within 24 hours.</div>
+</section>
+
+<footer>Vaultflow AI Observance Tool · Agent-run security gateway</footer>
 <script>
   const inputEl  = document.getElementById('input-text');
   const btnRedact = document.getElementById('redact-btn');
@@ -448,6 +604,48 @@
   // Allow Ctrl+Enter to submit
   inputEl.addEventListener('keydown', e => {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) btnRedact.click();
+  });
+
+  // Early Access form
+  const eaForm    = document.getElementById('ea-form');
+  const eaSubmit  = document.getElementById('ea-submit');
+  const eaConfirm = document.getElementById('ea-confirm');
+  const eaError   = document.getElementById('ea-error');
+
+  eaForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name    = document.getElementById('ea-name').value.trim();
+    const email   = document.getElementById('ea-email').value.trim();
+    const company = document.getElementById('ea-company').value.trim();
+    const useCase = document.getElementById('ea-usecase').value;
+
+    if (!name || !email || !company) {
+      eaError.textContent = 'Please fill in all fields.';
+      eaError.style.display = 'block';
+      return;
+    }
+    eaError.style.display = 'none';
+    eaSubmit.disabled = true;
+    eaSubmit.textContent = 'Submitting…';
+
+    try {
+      const res = await fetch('/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, company, use_case: useCase }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Submission failed. Please try again.');
+      }
+      eaForm.style.display = 'none';
+      eaConfirm.style.display = 'block';
+    } catch (err) {
+      eaError.textContent = err.message || 'Submission failed.';
+      eaError.style.display = 'block';
+      eaSubmit.disabled = false;
+      eaSubmit.textContent = 'Request Access';
+    }
   });
 </script>
 </body>
