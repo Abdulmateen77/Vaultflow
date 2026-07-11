@@ -3,15 +3,15 @@ from fastapi.testclient import TestClient
 from app.main import app
 
 
-def test_frontend_workforce_nav_links_to_paperclip_dashboard():
+def test_frontend_workforce_log_nav_links_to_dashboard_redirect():
     client = TestClient(app)
 
     for route in ["/", "/team"]:
         response = client.get(route)
         assert response.status_code == 200
         assert "Workforce Log" in response.text
-        assert "Paperclip Dashboard" in response.text
         assert 'href="/paperclip-ui"' in response.text
+        assert "Paperclip Dashboard" not in response.text
 
 
 def test_paperclip_ui_redirect_is_exposed(monkeypatch):
