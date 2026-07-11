@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as agentLogs from "../agentLogs.js";
 import type * as redactions from "../redactions.js";
 
 import type {
@@ -17,6 +18,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentLogs: typeof agentLogs;
   redactions: typeof redactions;
 }>;
 

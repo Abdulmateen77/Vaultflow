@@ -15,4 +15,14 @@ export default defineSchema({
     ),
     createdAt: v.number(),
   }).index("by_created_at", ["createdAt"]),
+  agentLogs: defineTable({
+    role: v.string(),
+    timestamp: v.string(),
+    ticketId: v.string(),
+    output: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_created_at", ["createdAt"])
+    .index("by_role", ["role"])
+    .index("by_ticket", ["ticketId"]),
 });

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vaultflow – Paperclip Team</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #111827;
+      --border: #2d3148;
+      --accent: #6366f1;
+      --accent-h: #818cf8;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --danger: #f43f5e;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --info: #38bdf8;
+    }
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, rgba(99, 102, 241, 0.14), transparent 34rem), var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      padding: 24px 16px 48px;
+      line-height: 1.6;
+    }
+    header, main, footer { max-width: 1080px; margin: 0 auto; }
+    nav { margin-bottom: 24px; }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 13px;
+      margin-right: 18px;
+    }
+    nav a:hover { color: var(--accent-h); }
+    h1 { font-size: clamp(28px, 5vw, 48px); line-height: 1.05; letter-spacing: -0.04em; }
+    h1 span { color: var(--accent-h); }
+    header p { margin-top: 12px; color: var(--muted); max-width: 760px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 32px;
+    }
+    .agent-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0)), var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text);
+      cursor: pointer;
+      min-height: 174px;
+      padding: 18px;
+      text-align: left;
+      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .agent-card:hover:not(:disabled) {
+      border-color: var(--accent-h);
+      transform: translateY(-2px);
+      box-shadow: 0 16px 38px rgba(0, 0, 0, 0.24);
+    }
+    .agent-card:disabled { cursor: wait; opacity: .58; }
+    .role-kicker {
+      color: var(--accent-h);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .agent-card h2 { font-size: 20px; margin-top: 10px; }
+    .agent-card p { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .output-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      margin-top: 24px;
+      overflow: hidden;
+    }
+    .output-head {
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 18px;
+    }
+    .output-title { font-weight: 800; }
+    #status { color: var(--muted); font-size: 13px; }
+    #status.running { color: var(--warn); }
+    #status.done { color: var(--success); }
+    #status.error { color: var(--danger); }
+    #agent-output {
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: 'Consolas', 'Menlo', monospace;
+      font-size: 13px;
+      min-height: 260px;
+      padding: 18px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .meta {
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 12px 18px;
+      font-size: 12px;
+    }
+    .pill {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      padding: 2px 9px;
+    }
+    footer { color: var(--muted); font-size: 12px; margin-top: 32px; text-align: center; }
+    @media (max-width: 960px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      .output-head { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="/">Redaction Gateway</a>
+    <a href="/team">Paperclip Team</a>
+  </nav>
+  <h1>Paperclip <span>Team</span></h1>
+  <p>Click a role to create a real Paperclip ticket assigned to that agent. The panel displays the agent's ticket response after Paperclip returns it.</p>
+</header>
+
+<main>
+  <section class="grid" aria-label="Paperclip agent roles">
+    <button class="agent-card" data-role="ceo" data-endpoint="/agent/ceo">
+      <div class="role-kicker">Strategist</div>
+      <h2>CEO</h2>
+      <p>Company vision, current strategy, and next steps for the agentic SaaS business.</p>
+    </button>
+    <button class="agent-card" data-role="cto" data-endpoint="/agent/cto">
+      <div class="role-kicker">Technical Lead</div>
+      <h2>CTO</h2>
+      <p>Current product features and roadmap for the PII gateway and broader agency.</p>
+    </button>
+    <button class="agent-card" data-role="sales" data-endpoint="/agent/sales">
+      <div class="role-kicker">Prospecting</div>
+      <h2>Sales</h2>
+      <p>Regulated-industry prospects and decision makers who need PII redaction.</p>
+    </button>
+    <button class="agent-card" data-role="marketing" data-endpoint="/agent/marketing">
+      <div class="role-kicker">Growth</div>
+      <h2>Marketing</h2>
+      <p>Landing page copy and one social launch post for the privacy/security product.</p>
+    </button>
+    <button class="agent-card" data-role="finance" data-endpoint="/agent/finance">
+      <div class="role-kicker">Pricing</div>
+      <h2>Finance</h2>
+      <p>Pricing tiers, per-request or subscription model, and operating budget.</p>
+    </button>
+  </section>
+
+  <section class="output-wrap" aria-live="polite">
+    <div class="output-head">
+      <div>
+        <div class="output-title">Agent ticket response</div>
+        <div id="status">Choose a role to create a Paperclip ticket.</div>
+      </div>
+      <span class="pill">Paperclip-backed</span>
+    </div>
+    <pre id="agent-output">No ticket has been run yet.</pre>
+    <div class="meta">
+      <span>Role: <strong id="meta-role">—</strong></span>
+      <span>Ticket: <strong id="meta-ticket">—</strong></span>
+    </div>
+  </section>
+</main>
+
+<footer>Vaultflow Team page — every card creates a real Paperclip ticket; FastAPI never calls an LLM directly for these role outputs.</footer>
+
+<script>
+  const cards = Array.from(document.querySelectorAll('.agent-card'));
+  const statusEl = document.getElementById('status');
+  const outputEl = document.getElementById('agent-output');
+  const roleEl = document.getElementById('meta-role');
+  const ticketEl = document.getElementById('meta-ticket');
+
+  function setBusy(isBusy) {
+    cards.forEach(card => card.disabled = isBusy);
+  }
+
+  function endpointFor(role) {
+    return `/agent/${role}`;
+  }
+
+  async function runRole(role) {
+    setBusy(true);
+    statusEl.className = 'running';
+    statusEl.textContent = `Creating Paperclip ticket for ${role.toUpperCase()} and waiting for the agent response...`;
+    outputEl.textContent = 'Waiting on Paperclip... This can take a minute because a real agent ticket is running.';
+    roleEl.textContent = role;
+    ticketEl.textContent = 'pending';
+
+    try {
+      const response = await fetch(endpointFor(role), { method: 'POST' });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `HTTP ${response.status}`);
+      }
+      statusEl.className = 'done';
+      statusEl.textContent = 'Agent response received from Paperclip.';
+      outputEl.textContent = payload.output;
+      roleEl.textContent = payload.role;
+      ticketEl.textContent = payload.ticket_identifier || payload.ticket_id;
+    } catch (error) {
+      statusEl.className = 'error';
+      statusEl.textContent = 'Paperclip agent run failed.';
+      outputEl.textContent = error.message || String(error);
+      ticketEl.textContent = '—';
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => runRole(card.dataset.role));
+  });
+</script>
+</body>
+</html>

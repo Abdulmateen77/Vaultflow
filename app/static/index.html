@@ -51,6 +51,20 @@
       font-size: 13px;
     }
 
+    nav {
+      max-width: 780px;
+      margin: 0 auto 18px;
+    }
+
+    nav a {
+      color: var(--muted);
+      font-size: 13px;
+      margin-right: 18px;
+      text-decoration: none;
+    }
+
+    nav a:hover { color: var(--accent-h); }
+
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -254,6 +268,10 @@
 <body>
 
 <header>
+  <nav>
+    <a href="/">Redaction Gateway</a>
+    <a href="/team">Paperclip Team</a>
+  </nav>
   <h1>Vault<span>flow</span></h1>
   <p>Paste text below and click Redact to detect and remove PII.</p>
 </header>
