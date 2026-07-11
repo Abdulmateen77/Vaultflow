@@ -90,6 +90,39 @@ def test_phone_detected_international_format():
     assert len(phones) == 1
 
 
+def test_phone_detected_contiguous_10_digits():
+    # Bug regression: 1234567890 (no separators) must be detected as PHONE
+    detections = detect_regex_pii("My phone number is 1234567890 please call me.")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 1
+    assert detections[0].type == "PHONE"
+
+
+def test_phone_detected_contiguous_with_leading_1():
+    # 11-digit US number with leading country code: 11234567890
+    detections = detect_regex_pii("Call 11234567890 to reach support.")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 1
+
+
+async def test_contiguous_phone_redacted_in_full_sentence():
+    # End-to-end redaction: the canonical repro from the bug report
+    text = "My name is John Smith. My phone number is 1234567890 and my email is john@example.com."
+    llm_detections = [Detection(type="NAME", start=11, end=21, source="llm")]
+    result = await redact_text(text, llm_detector=FakeClaudeDetector(llm_detections))
+
+    assert "[PHONE]" in result.redacted_text
+    assert "1234567890" not in result.redacted_text
+    assert any(d.type == "PHONE" for d in result.detections)
+
+
+def test_contiguous_phone_not_false_positive_inside_longer_digits():
+    # 12+ contiguous digits should NOT be tagged as PHONE (could be card or ID)
+    detections = detect_regex_pii("Account number 123456789012.")
+    phones = [d for d in detections if d.type == "PHONE"]
+    assert len(phones) == 0
+
+
 def test_phone_without_separators_detected():
     # VAU-6 regression: bare 10-digit number must be caught by regex
     detections = detect_regex_pii("My phone number is 1234567890 ok.")
